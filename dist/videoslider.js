@@ -99,6 +99,7 @@
             var thissliderbtn =  jQuery(this);
             var t = jQuery(this).closest('.slick-slider');
             var progressbarwidth = t.find('div.progressbar').width();
+            var slideIndex = 0;
             
             if(document.getElementById('autoplayaudio') != null && !t.find('.mute-button').hasClass('active'))
             {
@@ -108,16 +109,12 @@
             } 
             var previousDiv = (jQuery(t).hasClass('slick-initialized')) ?  thissliderbtn.closest('div.pbuttononclick').closest('.slick-slider').find('.wp-block-eedee-block-videoslide') :  thissliderbtn.closest('div.slick-slider').find('.wp-block-eedee-block-videoslide');
 
-            if(jQuery(this).hasClass('back-to-start') || jQuery(this).hasClass('replay-to-back')){
+            if(jQuery(this).hasClass('back-to-start') || jQuery(this).hasClass('replay-to-back') || jQuery(t).hasClass('slider-push')){
                 previousDiv = thissliderbtn.closest('div.slick-slider').find('.wp-block-eedee-block-videoslide');
                 jQuery('.slick-initialized .progress_inner').width(0);
-                // animate({width: width+'px'}, 'slow');  
+                slideIndex = localStorage.getItem('slideindex'); 
             }
-
             clearInterval(interval);
-            
-
-
             
             previousDiv.find('.slide-content').find('p').each(function(k,v){
                 if(jQuery(this).data('animation') == 'right'){
@@ -140,9 +137,6 @@
             var slider = jQuery(t);
             
             jQuery(slider).on('init', function(event, slick){
-
-    
-
                 if(jQuery(t).find('.slick-active').find('video').length){
                    var vplayer = jQuery('.slick-slider').find('.slick-active').find('video').get(0); 
                    vplayer.play();
@@ -162,6 +156,7 @@
                     pauseOnFocus: !1,
                     autoplay: false,
                     speed: 500,
+                    dots:true,
                     fade: true,
                     arrows:false,
                     pauseOnHover: !1,
@@ -170,6 +165,7 @@
                     nextArrow: '<button type="button" class="slick-next omarright pull-right"><i class="fa fa-angle-right" aria-hidden="true"></i></button>'
                 }),
                 jQuery(slider).on("beforeChange", function(e) {
+                    
                     slider.css('backgroundImage', "url( '' )");
                     thissliderbtn.closest('div.pbuttononclick').prev('.slick-list').find('.wp-block-eedee-block-videoslide').find('.slide-content').find('p').each(function(k,v){
                         if(jQuery(this).data('animation') == 'right'){
@@ -195,34 +191,41 @@
             // });
             
 
-            // console.log(previousDiv);
+            
             var totaltime = 0;
             var durationList = previousDiv.map(function(index, item) {
                 totaltime += parseInt(item.getAttribute('data-duration'));
                 return item.getAttribute('data-duration');
             });
             
+            // console.log(durationList);
             
-            
-            var slideIndex = 0;
             var changeSlide = function(timing) {
-                setTimeout(function() {
+                // slideIndex = jQuery('.slick-dots li.slick-active').index();
+                // slideIndex = slideIndex++;
 
+                var item = 0;
+                setTimeout(function() {
+                    // var storeindex = slideIndex;
                     if(!slider.hasClass('slider-push')){
                         if (timing !== 0) {
-                            slider.slick('slickNext');
+                            item = (slideIndex == 0) ? slideIndex + 2 : slideIndex + 1;
+                            console.log('index: ' + item);
+                            jQuery('.slick-dots li:nth-child('+item+')').find('button').click();
+                            localStorage.setItem('slideindex', slideIndex);
                         }
                         if (slideIndex < durationList.length){ 
                             changeSlide(durationList[slideIndex++]);
                         }
                     }
+                    // console.log('slide index: ' + storeindex);
+                    
 
                 }, timing);
                 
             }
         
-            
-            changeSlide(0);
+            changeSlide(durationList[slideIndex]);
 
             // progressbar
             setTimeout(function(){
@@ -244,25 +247,41 @@
                   }, false);
             }, totaltime);
             totaltime = totaltime / 1000;
+            localStorage.setItem('totaltime', totaltime);
+            
             var tm = 1;
-           
-
-
+            if(slider.hasClass('slider-push')){
+                tm = parseInt(localStorage.getItem("tm"));
+            } 
             var timer = function(){
                 interval = setInterval(function(){
-                
+                    
+                if(totaltime <= 0){
+                    // totaltime = localStorage.getItem('totaltime');
+                    // console.log('total time from get: ' + localStorage.getItem('totaltime'));
+                } 
                 var eachtimelength = progressbarwidth / totaltime;
+                
                 // console.log('progressbarwidth: ' + progressbarwidth);
                 // console.log('totaltime: ' + totaltime);
-                var width = eachtimelength * tm;
+                
+
+
+                var width = 0;
+                if(!slider.hasClass('slider-push')) width = eachtimelength * tm;
+                if(slider.hasClass('slider-push')) width = parseInt(jQuery('.progressbar div.progress_inner').width());
+                
                 // console.log('TM: ' + tm);
                 // console.log('width: ' + width);
                 // console.log('progressbarwidth: ' + progressbarwidth);
-                if(tm <= 100 && !slider.hasClass('slider-push') && width <= progressbarwidth ){
+                // console.log('inner width: ' + jQuery('.progressbar div.progress_inner').width());
+                
+                if(tm <= 100 && width <= progressbarwidth ){
                     jQuery('.slick-initialized .progress_inner').animate({width: width+'px'}, 'slow');  
                     jQuery('.display-time-inline').html(tm+'/'+totaltime);
                     //    
                 }else{
+                    console.log('inside else');
                     // slider.initSlick();
                     // console.log('inside else');
                     slider.addClass('slider-stop');
@@ -270,7 +289,8 @@
                     slider.find('.play-button').addClass('p-button').removeClass('push-active');
                     slider.removeClass('slick-initialized');
                 } 
-                tm += 1;
+                if(!slider.hasClass('slider-push')) tm += 1;
+                localStorage.setItem("tm", tm);
             }, 1000 );
 
         }

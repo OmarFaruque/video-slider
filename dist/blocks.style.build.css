@@ -331,3 +331,7 @@ body.archive .wp-block-eedee-block-videoslider.is-full {
 
 .wp-block-eedee-block-videoslider.alignleft, .wp-block-eedee-block-videoslider.alignright, .wp-block-eedee-block-videoslider.aligncenter {
   min-width: 50%; }
+
+  .slick-dots{
+    display: none;
+  }

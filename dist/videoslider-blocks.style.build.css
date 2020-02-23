@@ -668,3 +668,6 @@ body:not(.blog):not(.archive) .wp-block-eedee-block-videoslider.is-full{
 {
     margin: 0 5px;
 }
+ul.slick-dots {
+    display: none !important;
+}
