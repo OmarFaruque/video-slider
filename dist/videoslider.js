@@ -107,7 +107,12 @@
                 if (audionplay.paused) {
                     document.getElementById('autoplayaudio').play();
                     document.getElementById('autoplayaudio').muted = false;
-                }else{
+                }
+                else if(audionplay.muted){
+                    document.getElementById('autoplayaudio').play();
+                    document.getElementById('autoplayaudio').muted = false;
+                }
+                else{
                     audionplay.currentTime = 0;
                 }
 
