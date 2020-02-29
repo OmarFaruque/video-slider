@@ -215,7 +215,7 @@
             });
             
             // console.log(durationList);
-            
+            var indexIncrease = 0;
             window.changeSlide = function(timing) {
                 // slideIndex = jQuery('.slick-dots li.slick-active').index();
                 // slideIndex = slideIndex++;
@@ -223,22 +223,28 @@
                 var item = 0;
                 window.timeout = setTimeout(function() {
                     // var storeindex = slideIndex;
+                    
                     if(!slider.hasClass('slider-push')){
                         if (timing !== 0) {
                             item = (slideIndex == 0) ? +slideIndex + +2 : +slideIndex + +1;
                             item = item;
-                            // console.log('index: ' + item);
+                            
                             jQuery('.slick-dots li:nth-child('+item+')').find('button').click();
                             localStorage.setItem('slideindex', slideIndex);
                         }
+                        console.log(durationList[indexIncrease]);
+                        console.log('index increase: ' + indexIncrease);
                         if (slideIndex < durationList.length){ 
-                            changeSlide(durationList[slideIndex++]);
+                            var changedslider_item = durationList[slideIndex++];
+                            changeSlide(changedslider_item);
+                            
                         }
                     }
-                    // console.log('slide index: 0' + storeindex);
-                
+                    
+                    localStorage.setItem("start_time", Date.now());
+                    
                 }, timing);
-                
+                indexIncrease = indexIncrease+1;
             }
             
             if(jQuery(this).hasClass('back-to-start') || jQuery(this).hasClass('replay-to-back')){
@@ -248,6 +254,7 @@
         
             
             window.changeSlide(durationList[slideIndex]);
+            localStorage.setItem("start_time", Date.now());
 
             // progressbar
             window.stopeverything = function(){
