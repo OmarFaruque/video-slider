@@ -99,7 +99,9 @@
             var thissliderbtn =  jQuery(this);
             var t = jQuery(this).closest('.slick-slider');
             var progressbarwidth = t.find('div.progressbar').width();
-            var slideIndex = 0;
+            var slideIndex = 1;
+
+            
             
             if(document.getElementById('autoplayaudio') != null && !t.find('.mute-button').hasClass('active'))
             {
@@ -119,10 +121,15 @@
             } 
             var previousDiv = (jQuery(t).hasClass('slick-initialized')) ?  thissliderbtn.closest('div.pbuttononclick').closest('.slick-slider').find('.wp-block-eedee-block-videoslide') :  thissliderbtn.closest('div.slick-slider').find('.wp-block-eedee-block-videoslide');
 
-            if(jQuery(this).hasClass('back-to-start') || jQuery(this).hasClass('replay-to-back') || jQuery(t).hasClass('slider-push')){
+            if(jQuery(t).hasClass('slider-push')){
                 previousDiv = thissliderbtn.closest('div.slick-slider').find('.wp-block-eedee-block-videoslide');
                 jQuery('.slick-initialized .progress_inner').width(0);
                 slideIndex = localStorage.getItem('slideindex'); 
+            }
+            if(jQuery(this).hasClass('back-to-start') || jQuery(this).hasClass('replay-to-back')){
+                previousDiv = thissliderbtn.closest('div.slick-slider').find('.wp-block-eedee-block-videoslide');
+                jQuery('.slick-initialized .progress_inner').width(0);
+                slideIndex = 1; 
             }
             clearInterval(interval);
             
@@ -145,8 +152,25 @@
             });
 
             var slider = jQuery(t);
+
+            /*
+            * Set Start Time 
+            */
+           if(!jQuery(slider).hasClass('slider-push')){
+               localStorage.removeItem("slideindex");
+               localStorage.setItem('first_time', Date.now());
+               localStorage.setItem("start_time", Date.now());
+           }
+
+           
+
+
+
             if(jQuery(this).hasClass('back-to-start') || jQuery(this).hasClass('replay-to-back')){
                 slider.slick("slickGoTo", 0);
+                localStorage.removeItem("slideindex");
+                localStorage.setItem('first_time', Date.now());
+                localStorage.setItem("start_time", Date.now());
            }
             jQuery(slider).on('init', function(event, slick){
                 if(jQuery(t).find('.slick-active').find('video').length){
@@ -156,7 +180,7 @@
                 animatedfunction();
             });
 
-                if (jQuery(t).hasClass('slick-initialized') || jQuery(t).hasClass('slider-stop')) {
+            if (jQuery(t).hasClass('slick-initialized') || jQuery(t).hasClass('slider-stop')) {
                     // document.getElementById("video_progress").remove();
                     slider.slick('destroy');
                     var newtime = 0;
@@ -214,6 +238,11 @@
                 return item.getAttribute('data-duration');
             });
             
+
+
+           
+            
+            
             // console.log(durationList);
             var indexIncrease = 0;
             window.changeSlide = function(timing) {
@@ -221,40 +250,76 @@
                 // slideIndex = slideIndex++;
 
                 var item = 0;
+
+
                 window.timeout = setTimeout(function() {
                     // var storeindex = slideIndex;
-                    
+                    // console.log('has push');
                     if(!slider.hasClass('slider-push')){
+                        
                         if (timing !== 0) {
-                            item = (slideIndex == 0) ? +slideIndex + +2 : +slideIndex + +1;
-                            item = item;
+                            
+                            slideIndex = (localStorage.getItem('slideindex')) ? localStorage.getItem('slideindex') : slideIndex;
+                            
+                            item = +slideIndex + 1;
                             
                             jQuery('.slick-dots li:nth-child('+item+')').find('button').click();
-                            localStorage.setItem('slideindex', slideIndex);
-                        }
-                        console.log(durationList[indexIncrease]);
-                        console.log('index increase: ' + indexIncrease);
-                        if (slideIndex < durationList.length){ 
-                            var changedslider_item = durationList[slideIndex++];
-                            changeSlide(changedslider_item);
                             
+                            localStorage.setItem('slideitem', item);
+                            localStorage.setItem("start_time", Date.now());
+                        }
+                        // console.log(durationList[indexIncrease]);
+                        
+                        localStorage.setItem("this_duration", durationList[indexIncrease]);
+                        if (slideIndex < durationList.length){ 
+                            slideIndex = (localStorage.getItem('slideindex')) ? localStorage.getItem('slideindex') : slideIndex;
+                            
+                            var sliderindex2 = +slideIndex+1;
+                            
+                            var changedslider_item = durationList[sliderindex2];
+                            localStorage.setItem('changedslider_item', changedslider_item);
+                            changeSlide(changedslider_item);
+                            localStorage.setItem('slideindex', sliderindex2);
                         }
                     }
                     
-                    localStorage.setItem("start_time", Date.now());
                     
                 }, timing);
                 indexIncrease = indexIncrease+1;
             }
-            
+            var backpress = false;
+
             if(jQuery(this).hasClass('back-to-start') || jQuery(this).hasClass('replay-to-back')){
                 clearTimeout(window.timeout);
                 window.timeout =  setTimeout(changeSlide, durationList[slideIndex]);
+                localStorage.setItem("start_time", Date.now());
+                localStorage.setItem("this_duration", durationList[slideIndex]);
+                backpress = true;
            }
         
+           var durationtime = 0;
+            // If start again from push
             
-            window.changeSlide(durationList[slideIndex]);
-            localStorage.setItem("start_time", Date.now());
+                if(slider.hasClass('slider-push') && !backpress){
+                    clearTimeout(window.timeout);
+                    var start_time = localStorage.getItem("start_time");
+                    var tillnowtime = localStorage.getItem('push_active_time') - localStorage.getItem("start_time");
+                    var this_duration = localStorage.getItem("this_duration");
+
+                    var indexitem = localStorage.getItem('slideitem');
+                    jQuery('.slick-dots li:nth-child('+indexitem+')').find('button').click();
+                    
+                    if(this_duration > tillnowtime) durationtime = this_duration - tillnowtime;
+                }else{
+                    durationtime = durationList[slideIndex];
+                }
+            
+            // clearTimeout(window.timeout);
+            // window.changeSlide(durationtime);
+            if(!backpress){
+                window.timeout =  setTimeout(changeSlide(durationtime), durationtime);
+            }
+            localStorage.setItem("this_duration", durationList[slideIndex]);
 
             // progressbar
             window.stopeverything = function(){
@@ -275,20 +340,37 @@
                     slider.slick('slickSetOption', {
                         'autoplay': false
                     }, false);
+                    slider.addClass('stop');
                 }, totaltime);
             }
 
-
+            
             if(jQuery(this).hasClass('back-to-start') || jQuery(this).hasClass('replay-to-back')){
                 clearTimeout(window.cleareverything);
                 window.cleareverything =  setTimeout(stopeverything, totaltime);
-           }
-           stopeverything();
+            }
+           
+            // console.log(backpress);
+            if(!backpress){
+                if(slider.hasClass('slider-push')){
+                    var push_active_time = localStorage.getItem('push_active_time'),
+                    first_time = localStorage.getItem('first_time'),
+                    totaltimen = totaltime - (push_active_time - first_time);
+                    clearTimeout(window.cleareverything);
+                    window.cleareverything =  setTimeout(stopeverything, totaltimen);
+                }else{
+                    window.cleareverything =  setTimeout(stopeverything, totaltime);
+                }
+            }
+
+            
+
+
             totaltime = totaltime / 1000;
             localStorage.setItem('totaltime', totaltime);
             
             var tm = 1;
-            if(slider.hasClass('slider-push')){
+            if(slider.hasClass('slider-push') && !backpress){
                 tm = parseInt(localStorage.getItem("tm"));
             } 
             var timer = function(){
@@ -302,12 +384,10 @@
                 
                 // console.log('progressbarwidth: ' + progressbarwidth);
                 // console.log('totaltime: ' + totaltime);
-                
-
 
                 var width = 0;
                 if(!slider.hasClass('slider-push')) width = eachtimelength * tm;
-                if(slider.hasClass('slider-push')) width = parseInt(jQuery('.progressbar div.progress_inner').width());
+                if(slider.hasClass('slider-push') && !backpress) width = parseInt(jQuery('.progressbar div.progress_inner').width());
                 
                 // console.log('TM: ' + tm);
                 // console.log('width: ' + width);
@@ -319,7 +399,7 @@
                     jQuery('.display-time-inline').html(tm+'/'+totaltime);
                     //    
                 }else{
-                    console.log('inside else');
+                    // console.log('inside else');
                     // slider.initSlick();
                     // console.log('inside else');
                     slider.addClass('slider-stop');
@@ -343,11 +423,11 @@
         slider.find('div.pbuttononclick').hide();
     }); // Slick slider on click 
 
-
     /*
     * Slick push on click
     */
     jQuery(document.body).on('click', '.pButton .play-button.push-active', function() {
+        clearTimeout(window.timeout);
         var t = jQuery(this).closest('.slick-slider');
         t.addClass('slider-push');
         var vpalyer = jQuery('div.slick-active').find('video').get(0);
@@ -357,6 +437,7 @@
             if(document.getElementById('autoplayaudio') != null) document.getElementById('autoplayaudio').muted = true;
             jQuery(this).addClass('p-button');
             jQuery(this).removeClass('push-active'); 
+            localStorage.setItem('push_active_time', Date.now());
     });
 
 
